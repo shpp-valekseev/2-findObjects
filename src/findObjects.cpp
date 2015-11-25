@@ -3,7 +3,7 @@
  * To use the program you need to give black and white image
  * with silhouettes, and it will display the approximate result.
  * For correct operation of the program does not recommend
- * the use of images in PNG format with a transparent background.
+ * use of images in PNG format with a transparent background.
  */
 
 #include <iostream>
@@ -81,10 +81,16 @@ int main() {
 }
 
 /**
- * The method takes the picture.Processes all the pixels of the image,
- * if it finds a object point is method that will bring together the entire object,
- * and return it to the point of vector points. At the end of the method will be
- * compiled vector of all objects. The method returns a vector objects.
+ * Method: findObjects
+ * Usage: VectorSHPP <VectorSHPP<Point>> objects =  findObjects(GBufferedImage* image)
+ * ___________________________________________________________________________________
+ *
+ * Processes all pixels of the image, if it finds a point of object, that will bring method
+ * which collect together entire object, and return it to the point of vector
+ * points. At the end of method will be compiled vector of all objects.
+ *
+ * @param image - image stream
+ * @return - two dimensional vector of the points of the objects
  */
 VectorSHPP <VectorSHPP<Point>>  findObjects(GBufferedImage* image){
     VectorSHPP <VectorSHPP<Point>> setObjects;
@@ -105,9 +111,17 @@ VectorSHPP <VectorSHPP<Point>>  findObjects(GBufferedImage* image){
 }
 
 /**
- * Takes the point at which an object is found, and looking for
- * all the neighboring points to detect the entire object.
- * Returns points of a vector object
+ * Method: collectObject
+ * Usage: VectorSHPP<Point> object = collectObject(int x, int y, GBufferedImage* image)
+ * ____________________________________________________________________________________
+ *
+ * Takes the point at which an object is found, and looking for all the neighboring
+ * points to detect the entire object.
+ *
+ * @param x - point coordinate on the X axis
+ * @param y - point coordinate on the Y axis
+ * @param image - image stream
+ * @return - Vector points of one object
  */
 VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image){
     VectorSHPP <Point> result;
@@ -137,8 +151,20 @@ VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image){
 }
 
 /**
- * reads from the array of each point of the object,
- * and returns the image where the objects are located in a row
+ * Method: drawObjectInLiline
+ * Usage: GBufferedImage* objectsInLine = drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects,
+ *                                              GWindow &windowForLineImage, int maxWidth, int maxHeight)
+ * _____________________________________________________________________________________________________
+ *
+ * This method specifies size of new picture, the height same the highest object multiplied by 1.3
+ * (this is the number of attached to the free space at the top of image), and the width equal to the
+ * width of all objects. After that draw objects on a new image in a line.
+ *
+ * @param setObjects - two dimensional vector of the points of the objects
+ * @param windowForLineImage - Screen where will be placed new image
+ * @param maxWidth - width of the original image, it need for calculate the min and max size of the object
+ * @param maxHeight - height of the original image, it need for calculate the min and max size of the object
+ * @return - image stream in which all objects are located in one line
  */
 GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, GWindow &windowForLineImage, int maxWidth, int maxHeight){
     GBufferedImage* imageInLine = new GBufferedImage();
@@ -189,7 +215,18 @@ GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, GWi
 }
 
 /**
- * Takes an array objects, new image and new window. Sets the window, and image size.
+ * Method: setSizeWindow
+ * Usage: setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth,
+ *                                          GBufferedImage* imageInLine, GWindow &windowForLineImage)
+ * __________________________________________________________________________________________________
+ *
+ * Set size for new image, building on size of the objects
+ *
+ * @param setObjects - two dimensional vector of the points of the objects
+ * @param maxHeight - height of the original image, it need for calculate the min and max size of the object
+ * @param maxWidth - width of the original image, it need for calculate the min and max size of the object
+ * @param imageInLine - image where will be placed all objects
+ * @param windowForLineImage - Screen where will be placed new image
  */
 void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth, GBufferedImage* imageInLine, GWindow &windowForLineImage){
     int height;
@@ -234,8 +271,15 @@ void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int
 }
 
 /**
- * The method takes two windows, one with the original image,
- * and the second to visualize the schedule
+ * Method: findPeople
+ * Using: findPeople(GBufferedImage *image, GBufferedImage *newImage)
+ * __________________________________________________________________
+ *
+ * Method processes images with objects, calculates the "weight" of the axes Y,
+ * after which visualizes it as a graph, and counts the number of people on graph.
+ *
+ * @param image - image stream, which shows all objects
+ * @param newImage - image stream to visualize graphics
  */
 void findPeople(GBufferedImage *image, GBufferedImage *newImage){
     VectorSHPP <float> sumPixelsInWidth;
@@ -255,9 +299,18 @@ void findPeople(GBufferedImage *image, GBufferedImage *newImage){
 }
 
 /**
- * The method goes through each pixel of the Y-axis,
- * and counts the number of black pixels surrounding
- * "the cost" of pixels become smaller closer to the legs
+ * Method: sumPixelsInOneYCoordinate
+ * Usage: float sumPixels = sumPixelsInOneYCoordinate(int x, GBufferedImage *image)
+ * ________________________________________________________________________________
+ *
+ * Method calculates the number of each black pixels in axis Y, as well as all the
+ * neighboring pixels. For each pixel calculated a certain number, the number becomes
+ * smaller when the neighboring pixels being away, as well as the number becomes
+ * smaller towards the bottom of the image.
+ *
+ * @param x - X coordinate on which needs to process all pixels on the Y axis
+ * @param image - stream image
+ * @return "weight" Y axis
  */
 float sumPixelsInOneYCoordinate(int x, GBufferedImage *image){
     float col = 0;
@@ -292,7 +345,14 @@ float sumPixelsInOneYCoordinate(int x, GBufferedImage *image){
 }
 
 /**
- * Accepts vector float data type, and returns the largest value of its
+ * Method: findMaxPixelsCol
+ * Usage: float max = findMaxPixelsCol(VectorSHPP <float> &sumPixelsInWidth)
+ * _________________________________________________________________________
+ *
+ * This method finds the greatest value of the number of vector
+ *
+ * @param sumPixelsInWidth - Vector with numbers
+ * @return the maximum number
  */
 float findMaxPixelsCol(VectorSHPP <float> &sumPixelsInWidth){
     int maxNumber = 0;
@@ -304,8 +364,15 @@ float findMaxPixelsCol(VectorSHPP <float> &sumPixelsInWidth){
 }
 
 /**
- * Receives data vector type float and returns the same
- * vector with stable values array percentage range (0 to 1)
+ * Method: stabiliationPixels
+ * Using: VectorSHPP<int> stableNumber = stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber)
+ * _______________________________________________________________________________________________________________
+ *
+ * This method stabilizes all numbers in a percentage range from 0 to 100
+ *
+ * @param sumPixelsInWidth - vector numbers type float
+ * @param maxNumber - The maximum number of the input vector
+ * @return - vector numbers type int
  */
 VectorSHPP<int> stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber){
     VectorSHPP<int> res;
@@ -322,7 +389,14 @@ VectorSHPP<int> stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float m
 }
 
 /**
- * Receives vector int, and returns the same vector with inverted values
+ * Method: flipArrayValues
+ * Usage: VectorSHPP<int> flipValues = flipArrayValues(VectorSHPP<int> stabSum)
+ * ___________________________________________________________________________
+ *
+ * Receives vector Int and makes negative values
+ *
+ * @param stabSum - vector values type int
+ * @return - returns the input vector with negative values
  */
 VectorSHPP<int> flipArrayValues(VectorSHPP<int> stabSum){
     VectorSHPP<int> res;
@@ -334,8 +408,15 @@ VectorSHPP<int> flipArrayValues(VectorSHPP<int> stabSum){
 }
 
 /**
- * Receives vector int, which are processed by the
- * coordinate values Y, and displays them as a graph.
+ * Method: drawGraph
+ * Usage: drawGraph(VectorSHPP<int> &stabSum, GBufferedImage *newImage)
+ * ___________________________________________________________________
+ *
+ * Receives vector of int where each value - a visualization of the
+ * "weight" of Y coordinate and draws these values on the graph.
+ *
+ * @param stabSum - vector of numbers from 0 to 100
+ * @param newImage - stream image
  */
 void drawGraph(VectorSHPP<int> &stabSum, GBufferedImage *newImage){
     int x = 1;
@@ -347,24 +428,31 @@ void drawGraph(VectorSHPP<int> &stabSum, GBufferedImage *newImage){
 }
 
 /**
- * Processes "schedule", and decides whether there is
- * a human figure. Returns the number of people in the image.
+ * Method: goThroughLine
+ * Usage: int colPeople = goThroughLine(VectorSHPP<int> &line)
+ * ___________________________________________________________
+ *
+ * Method considers delta from the chart. If in the last five
+ * pixels has been the growth of delta for more than 10 pixels,
+ * and shortly thereafter follow descent of delta for more than
+ * 10 pixels, then method counts one person.
+ *
+ * @param line - vector of numbers from 0 to 100
+ * @return - number of people silhouettes
  */
 int goThroughLine(VectorSHPP<int> &line){
     int result = 0;
     int dy = 0;
-    bool trigUpH = false;
-    bool trigUpL = false;
+    bool trigUp = false;
 
     for(int i = 0; i < line.size(); i++){
         if (i >= 5) dy = line[i - 5] - line[i];
-        if (dy >= 10) trigUpH = true;
-        if (dy <= 50 && dy > 0 && trigUpH) trigUpL = true;
 
-        if (dy <= -10 && trigUpH && trigUpL){
+        if (dy >= 10) trigUp = true;
+
+        if (dy <= -10 && trigUp){
             result++;
-            trigUpH = false;
-            trigUpL = false;
+            trigUp = false;
         }
     }
     return result;
