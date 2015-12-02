@@ -4,6 +4,10 @@
  * with silhouettes, and it will display the approximate result.
  * For correct operation of the program does not recommend
  * use of images in PNG format with a transparent background.
+ *
+ * For a convenient test program already has an image with names:
+ * 1.jpg | 3.jpg | 4in1.jpg | 7.jpg | 8.jpg | 8-2.jpg | 86.jpg | mnogo.jpg
+ *
  */
 
 #include <iostream>
@@ -28,8 +32,8 @@ const int SIZE_BETWEEN_OBJECTS = 5;
 // function prototypes
 VectorSHPP <VectorSHPP<Point>> findObjects(GBufferedImage* image);
 VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image);
-GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, GWindow &windowForLineImage, int maxWidth, int maxHeight);
-void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth, GBufferedImage* imageInLine, GWindow &windowForLineImage);
+GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, int maxWidth, int maxHeight);
+void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth, GBufferedImage* imageInLine);
 
 void findPeople(GBufferedImage *image, GBufferedImage *newImage);
 float sumPixelsInOneYCoordinate(int x, GBufferedImage *image);
@@ -46,36 +50,33 @@ int goThroughLine(VectorSHPP<int> &line);
  */
 int main() {
     cout << "Welcome to 'Recognize silhouettes' program." << endl;
-    string name;
-    cout << "Enter the name of the image file : ";
-    cin >> name;
-    cout << "Processing..." << endl;
+    while(true){
+        string name;
+        cout << "Enter the name of the image file : ";
+        cin >> name;
+        cout << "Processing..." << endl;
 
-    // displays the initial image
-    GWindow window;
-    GBufferedImage* image = new GBufferedImage();
-    image->load(name);
-    window.setCanvasSize(image->getWidth(),image->getHeight());
-    window.add(image);
+        // displays the initial image
+        GBufferedImage* image = new GBufferedImage();
+        image->load(name);
 
-    // It counts the number of objects and closes the screen with the original image
-    VectorSHPP<VectorSHPP<Point>> setObjects = findObjects(image);
-    cout << "find " << setObjects.size() << " objects" << endl;
-    window.close();
+        // It counts the number of objects and closes the screen with the original image
+        VectorSHPP<VectorSHPP<Point>> setObjects = findObjects(image);
+        cout << "find " << setObjects.size() << " objects" << endl;
 
-    // It displays all the objects in a row
-    GWindow windowForLineImage;
-    GBufferedImage* imageInLine;
-    imageInLine = drawObjectInLiline(setObjects, windowForLineImage, image->getWidth(), image->getHeight());
-    delete image;
-    // calculates the pixels of Y coordinates, draws the schedule and outputs the result
-    GWindow resWindow;
-    GBufferedImage *newImage = new GBufferedImage(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH, 0xffffff);
-    resWindow.setCanvasSize(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH);
-    resWindow.add(newImage);
-    findPeople(imageInLine, newImage);
-    delete imageInLine;
-    delete newImage;
+        // It displays all the objects in a row
+        GBufferedImage* imageInLine;
+        imageInLine = drawObjectInLiline(setObjects, image->getWidth(), image->getHeight());
+        delete image;
+        // calculates the pixels of Y coordinates, draws the schedule and outputs the result
+        //  GWindow resWindow;
+        GBufferedImage *newImage = new GBufferedImage(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH, 0xffffff);
+        //  resWindow.setCanvasSize(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH);
+        //  resWindow.add(newImage);
+        findPeople(imageInLine, newImage);
+        delete imageInLine;
+        delete newImage;
+    }
     return 0;
 
 }
@@ -153,7 +154,7 @@ VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image){
 /**
  * Method: drawObjectInLiline
  * Usage: GBufferedImage* objectsInLine = drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects,
- *                                              GWindow &windowForLineImage, int maxWidth, int maxHeight)
+ *                                               int maxWidth, int maxHeight)
  * _____________________________________________________________________________________________________
  *
  * This method specifies size of new picture, the height same the highest object multiplied by 1.3
@@ -161,18 +162,17 @@ VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image){
  * width of all objects. After that draw objects on a new image in a line.
  *
  * @param setObjects - two dimensional vector of the points of the objects
- * @param windowForLineImage - Screen where will be placed new image
  * @param maxWidth - width of the original image, it need for calculate the min and max size of the object
  * @param maxHeight - height of the original image, it need for calculate the min and max size of the object
  * @return - image stream in which all objects are located in one line
  */
-GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, GWindow &windowForLineImage, int maxWidth, int maxHeight){
+GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, int maxWidth, int maxHeight){
     GBufferedImage* imageInLine = new GBufferedImage();
     int heightTmp;
     int startXPos = 0;
 
     // sets the size of the new window and images
-    setSizeWindow(setObjects, maxHeight, maxWidth, imageInLine, windowForLineImage);
+    setSizeWindow(setObjects, maxHeight, maxWidth, imageInLine);
     int heightWindow = imageInLine->getHeight();
 
     // takes every object from the array
@@ -210,14 +210,13 @@ GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, GWi
         startXPos = startXPos + (maxX - minX) + SIZE_BETWEEN_OBJECTS; // change start position of the X coordinate for each object
 
     }
-    windowForLineImage.close();
     return imageInLine;
 }
 
 /**
  * Method: setSizeWindow
  * Usage: setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth,
- *                                          GBufferedImage* imageInLine, GWindow &windowForLineImage)
+ *                                          GBufferedImage* imageInLine)
  * __________________________________________________________________________________________________
  *
  * Set size for new image, building on size of the objects
@@ -226,9 +225,8 @@ GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, GWi
  * @param maxHeight - height of the original image, it need for calculate the min and max size of the object
  * @param maxWidth - width of the original image, it need for calculate the min and max size of the object
  * @param imageInLine - image where will be placed all objects
- * @param windowForLineImage - Screen where will be placed new image
  */
-void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth, GBufferedImage* imageInLine, GWindow &windowForLineImage){
+void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth, GBufferedImage* imageInLine){
     int height;
     int width;
     int maxHeightObject = 0;
@@ -266,8 +264,6 @@ void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int
     // sets the size of window and image
     imageInLine->resize(widthWindow, maxHeightObject * 1.3);
     imageInLine->fill(0xffffff);
-    windowForLineImage.setCanvasSize(imageInLine->getWidth(), imageInLine->getHeight());
-    windowForLineImage.add(imageInLine);
 }
 
 /**
