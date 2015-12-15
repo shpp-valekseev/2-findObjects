@@ -29,6 +29,24 @@ const int HEIGHT_IMAGE_GRAPH = 200;
 // the distance between objects when they will draw in a line
 const int SIZE_BETWEEN_OBJECTS = 5;
 
+// constants white, light gray and white colors, respectively
+const int WHITE_COLOR = 0xffffff;
+const int LIGHT_GRAY_COLOR = 0xefefef;
+const int BLACK_COLOR = 0x000000;
+
+// start the "cost" of the pixel. Need to calculate the "cost" of coordinates
+const float START_COST_OF_PIXEL = 10;
+
+// coefficient that reduces the "cost" of pixels on the Y and X coordinate, respectively
+const float REDUCTION_FACTOR_Y_COORDINATE = 1.01;
+const float REDUCTION_FACTOR_X_COORDINATE = 1.1;
+
+// incline level in pixels
+const int INCLINE_LEVEL = 10;
+
+// number of pixels in which need to check delta
+const int STEP_FOR_CHECK = 5;
+
 // function prototypes
 VectorSHPP <VectorSHPP<Point>> findObjects(GBufferedImage* image);
 VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image);
@@ -38,15 +56,15 @@ void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int
 void findPeople(GBufferedImage *image, GBufferedImage *newImage);
 float sumPixelsInOneYCoordinate(int x, GBufferedImage *image);
 float findMaxPixelsCol(VectorSHPP <float> &sumPixelsInWidth);
-VectorSHPP<int> stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber);
+VectorSHPP<int> stabilizationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber);
 VectorSHPP<int> flipArrayValues(VectorSHPP<int> stabSum);
 void drawGraph(VectorSHPP<int> &stabSum, GBufferedImage *newImage);
 int goThroughLine(VectorSHPP<int> &line);
 
 
 /**
- * The main method of program that asks the user for the name of
- * the file, reads the image and calls a method to detect people
+ * The main function of program that asks the user for the name of
+ * the file, reads the image and calls a function to detect people
  */
 int main() {
     cout << "Welcome to 'Recognize silhouettes' program." << endl;
@@ -69,10 +87,7 @@ int main() {
         imageInLine = drawObjectInLiline(setObjects, image->getWidth(), image->getHeight());
         delete image;
         // calculates the pixels of Y coordinates, draws the schedule and outputs the result
-        //  GWindow resWindow;
-        GBufferedImage *newImage = new GBufferedImage(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH, 0xffffff);
-        //  resWindow.setCanvasSize(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH);
-        //  resWindow.add(newImage);
+        GBufferedImage *newImage = new GBufferedImage(imageInLine->getWidth(), HEIGHT_IMAGE_GRAPH, WHITE_COLOR);
         findPeople(imageInLine, newImage);
         delete imageInLine;
         delete newImage;
@@ -82,13 +97,13 @@ int main() {
 }
 
 /**
- * Method: findObjects
+ * Function: findObjects
  * Usage: VectorSHPP <VectorSHPP<Point>> objects =  findObjects(GBufferedImage* image)
  * ___________________________________________________________________________________
  *
- * Processes all pixels of the image, if it finds a point of object, that will bring method
+ * Processes all pixels of the image, if it finds a point of object, that will bring function
  * which collect together entire object, and return it to the point of vector
- * points. At the end of method will be compiled vector of all objects.
+ * points. At the end of function will be compiled vector of all objects.
  *
  * @param image - image stream
  * @return - two dimensional vector of the points of the objects
@@ -98,8 +113,8 @@ VectorSHPP <VectorSHPP<Point>>  findObjects(GBufferedImage* image){
 
     for (int y = 0; y < image->getHeight(); y++){
         for (int x = 0; x < image->getWidth(); x++){
-            if (image->getRGB(x,y) <= 0xefefef){
-                image->setRGB(x,y,0xffffff);
+            if (image->getRGB(x,y) <= LIGHT_GRAY_COLOR){
+                image->setRGB(x,y,WHITE_COLOR);
                 VectorSHPP <Point> tmp = collectObject(x, y, image);
                 // if the object is smaller than the minimum size, it will not be counted
                 if(tmp.size() > MIN_OBJECT_SIZE){
@@ -112,7 +127,7 @@ VectorSHPP <VectorSHPP<Point>>  findObjects(GBufferedImage* image){
 }
 
 /**
- * Method: collectObject
+ * Function: collectObject
  * Usage: VectorSHPP<Point> object = collectObject(int x, int y, GBufferedImage* image)
  * ____________________________________________________________________________________
  *
@@ -137,10 +152,10 @@ VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image){
             if (x < image->getWidth()-1 && x > 1){
                 for(int y = newPoint.getY()-1; y <= newPoint.getY()+1; y++){
                     if (y < image->getHeight()-1 && y > 1){
-                        if (image->getRGB(x,y) <= 0xefefef){
+                        if (image->getRGB(x,y) <= LIGHT_GRAY_COLOR){
                             Point tmpPoint(x,y);
                             points.enqueue(tmpPoint);
-                            image->setRGB(tmpPoint.getX(),tmpPoint.getY(),0xffffff);
+                            image->setRGB(tmpPoint.getX(),tmpPoint.getY(),WHITE_COLOR);
                         }
                     }
                 }
@@ -152,12 +167,12 @@ VectorSHPP <Point> collectObject (int x, int y, GBufferedImage* image){
 }
 
 /**
- * Method: drawObjectInLiline
+ * Function: drawObjectInLiline
  * Usage: GBufferedImage* objectsInLine = drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects,
  *                                               int maxWidth, int maxHeight)
  * _____________________________________________________________________________________________________
  *
- * This method specifies size of new picture, the height same the highest object multiplied by 1.3
+ * This function specifies size of new picture, the height same the highest object multiplied by 1.3
  * (this is the number of attached to the free space at the top of image), and the width equal to the
  * width of all objects. After that draw objects on a new image in a line.
  *
@@ -205,16 +220,15 @@ GBufferedImage* drawObjectInLiline(VectorSHPP <VectorSHPP<Point>>setObjects, int
 
             int tmpX = (point.getX() - minX) + startXPos;
             int tmpY = (heightWindow - heightTmp) + (point.getY() - minY);
-            imageInLine->setRGB(tmpX, tmpY - 1, 0x000000);
+            imageInLine->setRGB(tmpX, tmpY - 1, BLACK_COLOR);
         }
         startXPos = startXPos + (maxX - minX) + SIZE_BETWEEN_OBJECTS; // change start position of the X coordinate for each object
-
     }
     return imageInLine;
 }
 
 /**
- * Method: setSizeWindow
+ * Function: setSizeWindow
  * Usage: setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int maxWidth,
  *                                          GBufferedImage* imageInLine)
  * __________________________________________________________________________________________________
@@ -262,16 +276,16 @@ void setSizeWindow(VectorSHPP <VectorSHPP<Point>> setObjects, int maxHeight, int
     }
 
     // sets the size of window and image
-    imageInLine->resize(widthWindow, maxHeightObject * 1.3);
-    imageInLine->fill(0xffffff);
+    imageInLine->resize(widthWindow, maxHeightObject * 1.3); // 1.3 is the percentage by which the image is enlarged relative to the highest object
+    imageInLine->fill(WHITE_COLOR);
 }
 
 /**
- * Method: findPeople
+ * Function: findPeople
  * Using: findPeople(GBufferedImage *image, GBufferedImage *newImage)
  * __________________________________________________________________
  *
- * Method processes images with objects, calculates the "weight" of the axes Y,
+ * Function processes images with objects, calculates the "weight" of the axes Y,
  * after which visualizes it as a graph, and counts the number of people on graph.
  *
  * @param image - image stream, which shows all objects
@@ -283,23 +297,20 @@ void findPeople(GBufferedImage *image, GBufferedImage *newImage){
         sumPixelsInWidth.add(sumPixelsInOneYCoordinate(x, image));
     }
     float maxNumber = findMaxPixelsCol(sumPixelsInWidth);
-    VectorSHPP<int> stabSum = stabiliationPixels(sumPixelsInWidth, maxNumber);
+    VectorSHPP<int> stabSum = stabilizationPixels(sumPixelsInWidth, maxNumber);
     stabSum = flipArrayValues(stabSum);
     drawGraph(stabSum, newImage);
     int res = goThroughLine(stabSum);
-    if (res > 1){
-        cout << "On this image, we found approx " << res << " peoples" << endl;
-    } else {
-        cout << "On this image, we found approx " << res << " people" << endl;
-    }
+    cout << "On this image, we found approx " << res << " people" << endl;
+
 }
 
 /**
- * Method: sumPixelsInOneYCoordinate
+ * Function: sumPixelsInOneYCoordinate
  * Usage: float sumPixels = sumPixelsInOneYCoordinate(int x, GBufferedImage *image)
  * ________________________________________________________________________________
  *
- * Method calculates the number of each black pixels in axis Y, as well as all the
+ * Function calculates the number of each black pixels in axis Y, as well as all the
  * neighboring pixels. For each pixel calculated a certain number, the number becomes
  * smaller when the neighboring pixels being away, as well as the number becomes
  * smaller towards the bottom of the image.
@@ -311,27 +322,27 @@ void findPeople(GBufferedImage *image, GBufferedImage *newImage){
 float sumPixelsInOneYCoordinate(int x, GBufferedImage *image){
     float col = 0;
 
-    float yv = 10; // reduces the "cost" of each pixel is closer to the legs
+    float yValue = START_COST_OF_PIXEL; // reduces the "cost" of each pixel is closer to the legs
     for (int y = 1; y < image->getHeight()-1; y++){
-        yv = yv/1.01;
-        if (image->getRGB(x,y) < 0xefefef){
+        yValue = yValue / REDUCTION_FACTOR_Y_COORDINATE;
+        if (image->getRGB(x,y) < LIGHT_GRAY_COLOR){
             int tmpX = x;
-            float i = yv;
+            float i = yValue;
             // considers all the black pixels to the left
             if(tmpX > 1){
-                while(image->getRGB(tmpX-1,y) < 0xefefef && tmpX-1 > 1){
+                while(image->getRGB(tmpX-1,y) < LIGHT_GRAY_COLOR && tmpX-1 > 1){
                     col = col + i;
-                    i = i/1.1;
+                    i = i / REDUCTION_FACTOR_X_COORDINATE;
                     tmpX--;
                 }
             }
             tmpX = x;
-            i = yv;
+            i = yValue;
             if(tmpX < image->getWidth()-1){
                 // considers all the black pixels to the right
-                while(image->getRGB(tmpX+1,y) < 0xefefef && tmpX+1 < image->getWidth()-1){
+                while(image->getRGB(tmpX+1,y) < LIGHT_GRAY_COLOR && tmpX+1 < image->getWidth()-1){
                     col = col + i;
-                    i = i/1.1;
+                    i = i / REDUCTION_FACTOR_X_COORDINATE;
                     tmpX++;
                 }
             }
@@ -341,11 +352,11 @@ float sumPixelsInOneYCoordinate(int x, GBufferedImage *image){
 }
 
 /**
- * Method: findMaxPixelsCol
+ * Function: findMaxPixelsCol
  * Usage: float max = findMaxPixelsCol(VectorSHPP <float> &sumPixelsInWidth)
  * _________________________________________________________________________
  *
- * This method finds the greatest value of the number of vector
+ * This function finds the greatest value of the number of vector
  *
  * @param sumPixelsInWidth - Vector with numbers
  * @return the maximum number
@@ -354,23 +365,24 @@ float findMaxPixelsCol(VectorSHPP <float> &sumPixelsInWidth){
     int maxNumber = 0;
     for(int i = 0; i < sumPixelsInWidth.size(); i++){
         int tmp = sumPixelsInWidth[i];
-        if(tmp > maxNumber) maxNumber = tmp;
+        if(tmp > maxNumber)
+            maxNumber = tmp;
     }
     return maxNumber;
 }
 
 /**
- * Method: stabiliationPixels
- * Using: VectorSHPP<int> stableNumber = stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber)
+ * Function: stabilizationPixels
+ * Using: VectorSHPP<int> stableNumber = stabilizationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber)
  * _______________________________________________________________________________________________________________
  *
- * This method stabilizes all numbers in a percentage range from 0 to 100
+ * This function stabilizes all numbers in a percentage range from 0 to 100
  *
  * @param sumPixelsInWidth - vector numbers type float
  * @param maxNumber - The maximum number of the input vector
  * @return - vector numbers type int
  */
-VectorSHPP<int> stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber){
+VectorSHPP<int> stabilizationPixels(VectorSHPP <float> &sumPixelsInWidth, float maxNumber){
     VectorSHPP<int> res;
     for(int i = 0; i < sumPixelsInWidth.size(); i++){
         int number = sumPixelsInWidth.get(i);
@@ -385,7 +397,7 @@ VectorSHPP<int> stabiliationPixels(VectorSHPP <float> &sumPixelsInWidth, float m
 }
 
 /**
- * Method: flipArrayValues
+ * Function: flipArrayValues
  * Usage: VectorSHPP<int> flipValues = flipArrayValues(VectorSHPP<int> stabSum)
  * ___________________________________________________________________________
  *
@@ -404,7 +416,7 @@ VectorSHPP<int> flipArrayValues(VectorSHPP<int> stabSum){
 }
 
 /**
- * Method: drawGraph
+ * Function: drawGraph
  * Usage: drawGraph(VectorSHPP<int> &stabSum, GBufferedImage *newImage)
  * ___________________________________________________________________
  *
@@ -418,35 +430,37 @@ void drawGraph(VectorSHPP<int> &stabSum, GBufferedImage *newImage){
     int x = 1;
     for(int i = 0; i < stabSum.size(); i++){
         int y = stabSum[i];
-        newImage->setRGB(x, y + (newImage->getHeight()-1), 0x000000);
+        newImage->setRGB(x, y + (newImage->getHeight()-1), BLACK_COLOR);
         x++;
     }
 }
 
 /**
- * Method: goThroughLine
+ * Function: goThroughLine
  * Usage: int colPeople = goThroughLine(VectorSHPP<int> &line)
  * ___________________________________________________________
  *
- * Method considers delta from the chart. If in the last five
- * pixels has been the growth of delta for more than 10 pixels,
+ * Function considers delta from the chart. If in the last STEP_FOR_CHECK
+ * pixels has been the growth of delta for more than INCLINE_LEVEL pixels,
  * and shortly thereafter follow descent of delta for more than
- * 10 pixels, then method counts one person.
+ * INCLINE_LEVEL pixels, then function counts one person.
  *
  * @param line - vector of numbers from 0 to 100
  * @return - number of people silhouettes
  */
 int goThroughLine(VectorSHPP<int> &line){
     int result = 0;
-    int dy = 0;
+    int deltaY = 0;
     bool trigUp = false;
 
     for(int i = 0; i < line.size(); i++){
-        if (i >= 5) dy = line[i - 5] - line[i];
+        if (i >= STEP_FOR_CHECK)
+            deltaY = line[i - STEP_FOR_CHECK] - line[i];
 
-        if (dy >= 10) trigUp = true;
+        if (deltaY >= INCLINE_LEVEL)
+            trigUp = true;
 
-        if (dy <= -10 && trigUp){
+        if (deltaY <= -INCLINE_LEVEL && trigUp){
             result++;
             trigUp = false;
         }
