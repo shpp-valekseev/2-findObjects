@@ -29,7 +29,7 @@ const int HEIGHT_IMAGE_GRAPH = 200;
 // the distance between objects when they will draw in a line
 const int SIZE_BETWEEN_OBJECTS = 5;
 
-// constants white, light gray and white colors, respectively
+// constants white, light gray and black colors, respectively
 const int WHITE_COLOR = 0xffffff;
 const int LIGHT_GRAY_COLOR = 0xefefef;
 const int BLACK_COLOR = 0x000000;
